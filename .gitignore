@@ -1,11 +1,25 @@
+# Build artifacts
 node_modules/
 dist/
-.env
 *.log
-.DS_Store
-__pycache__/
-*.pyc
+
+# Client build
 client/node_modules/
 client/dist/
 client/test-results/
 client/tsconfig.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+
+# Vercel
+.vercel/

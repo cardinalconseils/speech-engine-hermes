@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.55.0",
     "dotenv": "^17.4.2",
     "openai": "^6.45.0",
     "typescript": "^6.0.3",
