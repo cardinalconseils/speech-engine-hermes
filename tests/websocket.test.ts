@@ -1,21 +1,25 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createServer } from "http";
+import type { AddressInfo } from "net";
 import { WebSocket } from "ws";
 import { createWebSocketServer } from "../src/websocket.js";
 import type { AppConfig } from "../src/config.js";
 
-const TEST_PORT = 3099;
-const TEST_HOST = "localhost";
-const FAKE_API_KEY = "sk-or-test-key-1234";
+const FAKE_API_KEY = "«redacted:sk-…»";
 
-function createTestConfig(): AppConfig {
+let testPort: number;
+const TEST_HOST = "127.0.0.1";
+let httpServer: ReturnType<typeof createServer>;
+let wsServer: ReturnType<typeof createWebSocketServer>;
+
+function createTestConfig(port: number): AppConfig {
   return {
     openrouter: {
       apiKey: FAKE_API_KEY,
       baseUrl: "https://openrouter.ai/api/v1",
     },
     defaultModel: "openai/gpt-4.1-nano",
-    ws: { port: TEST_PORT, host: TEST_HOST },
+    ws: { port, host: TEST_HOST },
     originWhitelist: [],
     heartbeatIntervalMs: 1000,
     maxSessionMessages: 20,
@@ -24,7 +28,7 @@ function createTestConfig(): AppConfig {
 
 function connect(): Promise<{ ws: WebSocket; sessionId: string }> {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(`ws://${TEST_HOST}:${TEST_PORT}`);
+    const ws = new WebSocket(`ws://${TEST_HOST}:${testPort}`);
     const timeout = setTimeout(() => reject(new Error("Connection timeout")), 5000);
 
     ws.on("message", (raw) => {
@@ -43,20 +47,21 @@ function connect(): Promise<{ ws: WebSocket; sessionId: string }> {
 }
 
 describe("WebSocket Server (integration)", () => {
-  let httpServer: ReturnType<typeof createServer>;
-  let wsServer: ReturnType<typeof createWebSocketServer>;
-
   beforeAll(async () => {
-    const config = createTestConfig();
     httpServer = createServer((_req, res) => {
       res.writeHead(200);
       res.end("ok");
     });
-    wsServer = createWebSocketServer(httpServer, config);
 
+    // Port 0 = OS assigns a free ephemeral port (no EADDRINUSE)
     await new Promise<void>((resolve) => {
-      httpServer.listen(TEST_PORT, TEST_HOST, resolve);
+      httpServer.listen(0, TEST_HOST, () => {
+        testPort = (httpServer.address() as AddressInfo).port;
+        resolve();
+      });
     });
+
+    wsServer = createWebSocketServer(httpServer, createTestConfig(testPort));
   });
 
   afterAll(async () => {

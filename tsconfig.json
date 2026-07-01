@@ -42,5 +42,6 @@
 
     "moduleResolution": "nodenext",
     "esModuleInterop": true,
-  }
+  },
+  "exclude": ["client", "dist", "node_modules"]
 }
